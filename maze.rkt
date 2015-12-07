@@ -1,3 +1,5 @@
+; AMB CONSTRUCTOR
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (require compatibility/defmacro)
 
 (define amb-fail '*)
@@ -33,10 +35,6 @@
   (lambda (pred)
     (if (not pred) (amb))))
 
-(define assert-special
-  (lambda (pred items)
-    (if (not pred) (begin (set! items (cdr items)) (amb)))))
-
 (define-macro bag-of
   (lambda (e)
     `(let ((+prev-amb-fail amb-fail)
@@ -56,31 +54,7 @@
   (assert (not (null? items)))
   (amb (car items) (an-element-of (cdr items))))
 
-(an-element-of '((0 3)))
 
-(define (another-element items)
-  (assert (not (null? items)))
-  (amb (list-ref items 0) (another-element items)))
-
-(define (integer-small n)
-  (amb n (integer-small (+ n 1))))
-
-
-(define number-between
-  (lambda (lo hi)
-    (let loop ((i lo))
-      (if (> i hi) (amb)
-          (amb i (loop (+ i 1)))))))
-
-
-; example
-
-(define (a-pythagorean-triple-between low high)
-  (let ((i (number-between low high)))
-    (let ((j (number-between i high)))
-      (let ((k (number-between j high)))
-        (assert (= (+ (* i i) (* j j)) (* k k)))
-        (list i j k)))))
 
 
 
@@ -98,21 +72,45 @@
         (else (distinct? (cdr items)))))
 
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(define maze
- '((1 1 1 1 1 0 1)(1 0 2 0 1 0 1)(1 0 1 1 1 2 1)(1 0 2 0 0 0 1)(1 1 1 0 1 1 1)(1 0 2 0 2 0 1)(1 1 1 1 1 0 1))
-)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; MAZE SAMPLES
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-(list-ref (list-ref maze 6) 1)
+; 3x3 MAZE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define 3-3-maze  '((1 1 1 1 1 0 1)(1 0 2 0 1 0 1)(1 0 1 1 1 2 1)(1 0 2 0 0 0 1)(1 1 1 0 1 1 1)(1 0 2 0 2 0 1)(1 1 1 1 1 0 1)))
+(define maze '())
+(set! maze 3-3-maze)
+
+; 5x5 MAZE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+; 4x6 MAZE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; HELPER FUNCTIONS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (integer-small n)
+  (amb n (integer-small (+ n 1))))
+
 
 (define position
   (lambda(element lst)
     (cond ((null? lst) -1)
           ((eq? element (car lst)) 0)
           (else (+ 1 (position element (cdr lst)))))))
+
 
 (define (make-counter)
   (define count 0)
@@ -128,34 +126,59 @@
 
 ; we name the closure
 
-(define f (make-counter))
+(define counter1 (make-counter))
+(define counter2 (make-counter))
+
+(define (last lst)
+    (cond ((null? (cdr lst)) (car lst))
+          (else (last (cdr lst)))))
 
 
 
-(define top-border (car maze))
-(define begin-point
+(define top-border
+  (lambda(maze)
+    (car maze)))
+
+(define bottom-border
+  (lambda(maze)
+    (last maze)))
+
+
+(define bottom-border-position
+  (lambda(maze)
+    (cond ((equal? (car maze) (bottom-border maze)) 0)
+          (else (+ 1 (bottom-border-position (cdr maze)))))))
+  
+
+
+(define find-begin-point
   (lambda (lst)
-    (cond ((eq? 0 (list-ref lst (- (f) 1))) (list 0 (- (f) 2)))
-          (else (begin-point lst)))))
+    (cond ((eq? 0 (list-ref lst (- (counter1) 1))) (list 0 (- (counter1) 2)))
+          (else (find-begin-point lst)))))
+
+(define find-end-point
+  (lambda (lst)
+    (cond ((eq? 0 (list-ref lst (- (counter2) 1))) (list (bottom-border-position (cdr maze)) (- (counter2) 2)))
+          (else (find-end-point lst)))))
 
 ;(begin-point top-border)
+
 
 (define make-new-position
   (lambda (position direction)
     (cond ((eq? direction 'right) (list (car position) (+ 1 (cadr position))))
           ((eq? direction 'left) (list (car position) (- (cadr position) 1)))
-          ((eq? direction 'forward) (list (+ 1 (car position)) (cadr position)))
+          ((eq? direction 'forward) (list (+ 1  (car position)) (cadr position)))
           (else (display 'Wrong shit)))))
 
-(make-new-position '(0 1) 'forward)
+;(make-new-position '(0 1) 'forward)
 
 
 (define position-value
-  (lambda (position)
+  (lambda (position maze)
     (list-ref (list-ref maze (car position)) (cadr position))))
 
 
-(position-value '(0 6))
 
 (define same-position?
   (lambda(position1 position2)
@@ -167,14 +190,6 @@
     (cond ((> (length items) 3) #t)
           (else #f))))
 
-(define (list-with lst idx val)
-  (if (null? lst)
-    lst
-    (cons
-      (if (zero? idx)
-        val
-        (car lst))
-      (list-with (cdr lst) (- idx 1) val))))
 
 
 (define (one-row-list lst index value)
@@ -193,55 +208,77 @@
                   (cons (car maze) (replace-maze (cdr maze) (list (- (car position) 1) (cadr position)) value))))))
   
 
-(define (maze-game)
-  (define current-position '(0 0))
-  (define previous-position '(0 0))
-  (define end-point '(6 5))
-  (define options '())
-  (define b (begin-point top-border))
-  (set! current-position b)
-  (define lst (list b previous-position))
-;  (display current-position)
-  (let ((c (integer-small 1)))
-    (display c)4
-    (set! current-position (car lst))
-    (set! previous-position (cadr lst))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; INITIALIZATION FUNCTIONS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define current-position '(0 0))
+(define previous-position '(0 0))
+(define options '())
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; MAIN MAZE FUNCTION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (maze-game maze)
+  (define begin-point (find-begin-point (top-border maze)))
+  (define end-point (find-end-point (bottom-border maze)))
+  (set! current-position begin-point)
+  (define correct-path (list current-position previous-position))
+
+  (let ((c (integer-small 50)))
+    (set! current-position (car correct-path))
+    (set! previous-position (cadr correct-path))
     (let ((next-move (an-element-of '(forward right left))))
       (let ((next-move-position (make-new-position current-position next-move)))
-    ;  (display current-position)
         (set! options (cons next-move options))
-        (display options)
-        (newline)
-        (display lst)
-        (newline)
-        (display 'Previous-position:)
-        (display previous-position)
-        (newline)
-        (display 'Current-position:)
-        (display current-position)
-        (newline)
-        (display 'Next-move:)
-        (display next-move)
-        (newline)
-        (display '------------------)
-        (newline)
+;        (display options)
+;        (newline)
+;        (display correct-path)
+;        (newline)
+;        (display 'Previous-position:)
+;        (display previous-position)
+;        (newline)
+;        (display 'Current-position:)
+;        (display current-position)
+;        (newline)
+;        (display 'Next-move:)
+;        (display next-move)
+;        (newline)
+;        (display '------------------)
+;        (newline)
         (if (exhausted-all? options)
             (begin
-              (set! lst (cdr lst))
+              (set! correct-path (cdr correct-path))
               (set! maze (replace-maze maze current-position 1))
-              (display maze)
-              (newline)
+             ; (display maze)
+             ; (newline)
               (set! options '())))
 
-  ;      (assert-special (not (exhausted-all? options)) lst) 
-        (assert (not (= (position-value next-move-position) 1)))
+        (assert (not (= (position-value next-move-position maze) 1)))
         (assert (not (same-position? next-move-position previous-position)))
-        (set! lst (append (list next-move-position) lst))
+        (set! correct-path (append (list next-move-position) correct-path))
         (set! previous-position current-position)
         (set! current-position next-move-position)
-        (set! options '())
-      ))
+        (set! options '())))
+
     (assert (equal? current-position end-point))
+    (display 'Correct-path:)
+    (display correct-path)
+    (newline)
     (display 'DONE)))
 
-(maze-game)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; CALLING MAZE FUNCTIONS WITH DIFFERENT SAMPLES
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(maze-game 3-3-maze)
+(newline)
+(display '--------------------------------------------------------------------------)
+;(maze-game 5-5-maze)
+(newline)
+(display '--------------------------------------------------------------------------)
+;(maze-game 4-6-maze)
+

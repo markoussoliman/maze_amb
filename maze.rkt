@@ -75,23 +75,28 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; MAZE SAMPLES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define maze '())
 
 
 ; 3x3 MAZE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define 3-3-maze  '((1 1 1 1 1 0 1)(1 0 2 0 1 0 1)(1 0 1 1 1 2 1)(1 0 2 0 0 0 1)(1 1 1 0 1 1 1)(1 0 2 0 2 0 1)(1 1 1 1 1 0 1)))
-(define maze '())
-(set! maze 3-3-maze)
 
 ; 5x5 MAZE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
+(define 5-5-maze  '((1 0 1 1 1 1 1 1 1 1 1)(1 0 2 0 1 0 2 0 2 0 1)(1 1 1 2 1 2 1 1 1 2 1)
+                    (1 0 2 0 1 0 2 0 1 0 1)(1 2 1 1 1 1 1 2 1 1 1)(1 0 1 0 2 0 2 0 2 0 1)
+                    (1 2 1 2 1 1 1 2 1 2 1)(1 2 1 2 1 2 1 1 1 2 1)(1 2 1 2 1 2 1 1 1 2 1)
+                    (1 0 2 0 1 0 2 0 1 0 1)(1 1 1 1 1 1 1 1 1 0 1)))
 
 ; 4x6 MAZE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+(define 4-6-maze  '((1 0 1 1 1 1 1 1 1)(1 0 2 0 1 0 2 0 1)(1 1 1 2 1 2 1 2 1)
+                    (1 0 2 0 1 0 1 0 1)(1 2 1 2 1 2 1 2 1)(1 0 1 0 1 0 1 0 1)
+                    (1 2 1 2 1 2 1 2 1)(1 0 1 0 1 0 1 0 1)(1 2 1 2 1 2 1 2 1)
+                    (1 0 1 0 1 0 1 0 1)(1 2 1 1 1 2 1 2 1)(1 0 2 0 2 0 1 0 1)
+                    (1 1 1 1 1 1 1 0 1)))
 
 
 
@@ -169,6 +174,7 @@
     (cond ((eq? direction 'right) (list (car position) (+ 1 (cadr position))))
           ((eq? direction 'left) (list (car position) (- (cadr position) 1)))
           ((eq? direction 'forward) (list (+ 1  (car position)) (cadr position)))
+          ((eq? direction 'backward) (list (- (car position) 1) (cadr position)))
           (else (display 'Wrong shit)))))
 
 ;(make-new-position '(0 1) 'forward)
@@ -187,7 +193,7 @@
 
 (define exhausted-all?
   (lambda(items)
-    (cond ((> (length items) 3) #t)
+    (cond ((> (length items) 4) #t)
           (else #f))))
 
 
@@ -226,28 +232,28 @@
   (define end-point (find-end-point (bottom-border maze)))
   (set! current-position begin-point)
   (define correct-path (list current-position previous-position))
-
-  (let ((c (integer-small 50)))
+;  (display (cadr correct-path))
+  (let ((c (integer-small 1)))
     (set! current-position (car correct-path))
     (set! previous-position (cadr correct-path))
-    (let ((next-move (an-element-of '(forward right left))))
+    (let ((next-move (an-element-of '(forward right left backward))))
       (let ((next-move-position (make-new-position current-position next-move)))
         (set! options (cons next-move options))
-;        (display options)
-;        (newline)
-;        (display correct-path)
-;        (newline)
-;        (display 'Previous-position:)
-;        (display previous-position)
-;        (newline)
-;        (display 'Current-position:)
-;        (display current-position)
-;        (newline)
-;        (display 'Next-move:)
-;        (display next-move)
-;        (newline)
-;        (display '------------------)
-;        (newline)
+        (display options)
+        (newline)
+        (display correct-path)
+        (newline)
+        (display 'Previous-position:)
+        (display previous-position)
+        (newline)
+        (display 'Current-position:)
+        (display current-position)
+        (newline)
+        (display 'Next-move:)
+        (display next-move)
+        (newline)
+        (display '------------------)
+        (newline)
         (if (exhausted-all? options)
             (begin
               (set! correct-path (cdr correct-path))
@@ -264,6 +270,8 @@
         (set! options '())))
 
     (assert (equal? current-position end-point))
+    (display c)
+    (newline)
     (display 'Correct-path:)
     (display correct-path)
     (newline)
@@ -273,12 +281,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; CALLING MAZE FUNCTIONS WITH DIFFERENT SAMPLES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;(set! maze 3-3-maze)
+;(maze-game 3-3-maze)
+;(newline)
+;(display '--------------------------------------------------------------------------)
 
-(maze-game 3-3-maze)
-(newline)
-(display '--------------------------------------------------------------------------)
+;(set! maze 5-5-maze)
 ;(maze-game 5-5-maze)
+;(newline)
+;(display '--------------------------------------------------------------------------)
+;;
+(set! maze 4-6-maze)
+(maze-game 4-6-maze)
 (newline)
 (display '--------------------------------------------------------------------------)
-;(maze-game 4-6-maze)
-
